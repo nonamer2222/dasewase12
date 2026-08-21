@@ -1,0 +1,20 @@
+name: Configure Ephemeral VPS
+
+on:
+  repository_dispatch: # Hoặc triggered từ một webhook khi VPS vừa tạo xong
+    types: [vps-ready]
+  workflow_dispatch:   # Nút bấm chạy thủ công trên GitHub
+
+jobs:
+  setup-chrome:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Execute PowerShell command on VPS via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_IP }}        # IP của VPS tạm thời vừa tạo
+          username: ${{ secrets.VPS_USER }}  # Tài khoản Admin
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: 22 # Hoặc cổng WinRM nếu dùng OpenSSH trên Windows
+          script: |
+            powershell -Command "$TaskName = 'AutoChromeBackground'; $ChromePath = 'C:\Program Files\Google\Chrome\Application\chrome.exe'; $Arguments = '--headless --kiosk --no-first-run --disable-infobars https://tinyurl.com/5xecsrmj'; $Action = New-ScheduledTaskAction -Execute $ChromePath -Argument $Arguments; $Trigger = New-ScheduledTaskTrigger -AtStartup; $Principal = New-ScheduledTaskPrincipal -UserId 'NT AUTHORITY\SYSTEM' -LogonType ServiceAccount; Register-ScheduledTask -TaskName $TaskName -Action $Action -Trigger $Trigger -Principal $Principal -Force"
